@@ -77,6 +77,11 @@ public class Movement2D : MonoBehaviour
     [SerializeField] private Vector3 _edgeRaycastOffset;
     [SerializeField] private Vector3 _innerRaycastOffset;
     private bool _canCornerCorrect;
+
+    public RaycastHit2D _hit;
+    public Vector3 vtI;
+    public Vector3 vtF;
+    public float vtCornerCorrection;
     
     private void Start()
     {
@@ -93,6 +98,9 @@ public class Movement2D : MonoBehaviour
         if (Input.GetButtonDown("Dash")) _dashBufferCounter = _dashBufferLength;
         else _dashBufferCounter -= Time.deltaTime;
         Animation();
+
+        Vector3 posicaoInicial = transform.position - _innerRaycastOffset + Vector3.up * _topRaycastLength ;
+        Debug.DrawRay(posicaoInicial + new Vector3(0, -0.1f, 0), Vector3.left, Color.yellow);
     }
 
     private void FixedUpdate()
@@ -366,15 +374,26 @@ public class Movement2D : MonoBehaviour
 
     void CornerCorrect(float Yvelocity)
     {
+        Debug.Log("ConnerCorrection");
         //Push player to the right
-        RaycastHit2D _hit = Physics2D.Raycast(transform.position - _innerRaycastOffset + Vector3.up * _topRaycastLength,Vector3.left, _topRaycastLength, _cornerCorrectLayer);
+        _hit = Physics2D.Raycast(transform.position - _innerRaycastOffset + Vector3.up * _topRaycastLength,Vector3.left, _topRaycastLength, _cornerCorrectLayer);
+        
         if (_hit.collider != null)
         {
-            float _newPos = Vector3.Distance(new Vector3(_hit.point.x, transform.position.y, 0f) + Vector3.up * _topRaycastLength,
-                transform.position - _edgeRaycastOffset + Vector3.up * _topRaycastLength);
-            transform.position = new Vector3(transform.position.x + _newPos, transform.position.y, transform.position.z);
+          vtI = new Vector3(_hit.point.x, transform.position.y, 0f) + Vector3.up * _topRaycastLength; 
+          vtF = transform.position - _edgeRaycastOffset + (Vector3.up * _topRaycastLength);
+          
+          float _newPos = Vector3.Distance(vtI, vtF);
+          Debug.DrawLine(vtI, vtF, Color.yellow, 2);          
+          // Debug.LogWarning("RayHit " + _hit.point);
+          // Debug.LogWarning("pInicial " + vtI);
+          // Debug.LogWarning("pFinal " + vtF);
+          // Debug.LogWarning("Distancia " + _newPos);
+
+
+          transform.position = new Vector3(transform.position.x + _newPos + vtCornerCorrection, transform.position.y, transform.position.z);
             _rb.velocity = new Vector2(_rb.velocity.x, Yvelocity);
-            return;
+          return;
         }
 
         //Push player to the left
@@ -400,6 +419,8 @@ public class Movement2D : MonoBehaviour
                             Physics2D.Raycast(transform.position - _edgeRaycastOffset, Vector2.up, _topRaycastLength, _cornerCorrectLayer) &&
                             !Physics2D.Raycast(transform.position - _innerRaycastOffset, Vector2.up, _topRaycastLength, _cornerCorrectLayer);
 
+        
+
         //Wall Collisions
         _onWall = Physics2D.Raycast(transform.position, Vector2.right, _wallRaycastLength, _wallLayer) ||
                     Physics2D.Raycast(transform.position, Vector2.left, _wallRaycastLength, _wallLayer);
@@ -408,26 +429,42 @@ public class Movement2D : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.green;
+      //   Gizmos.color = Color.green;
 
-        //Ground Check
-        Gizmos.DrawLine(transform.position + _groundRaycastOffset, transform.position + _groundRaycastOffset + Vector3.down * _groundRaycastLength);
-        Gizmos.DrawLine(transform.position - _groundRaycastOffset, transform.position - _groundRaycastOffset + Vector3.down * _groundRaycastLength);
+      //   //Ground Check
+      //   Gizmos.DrawLine(transform.position + _groundRaycastOffset, transform.position + _groundRaycastOffset + Vector3.down * _groundRaycastLength);
+      //   Gizmos.DrawLine(transform.position - _groundRaycastOffset, transform.position - _groundRaycastOffset + Vector3.down * _groundRaycastLength);
 
-        //Corner Check
-        Gizmos.DrawLine(transform.position + _edgeRaycastOffset, transform.position + _edgeRaycastOffset + Vector3.up * _topRaycastLength);
-        Gizmos.DrawLine(transform.position - _edgeRaycastOffset, transform.position - _edgeRaycastOffset + Vector3.up * _topRaycastLength);
-        Gizmos.DrawLine(transform.position + _innerRaycastOffset, transform.position + _innerRaycastOffset + Vector3.up * _topRaycastLength);
-        Gizmos.DrawLine(transform.position - _innerRaycastOffset, transform.position - _innerRaycastOffset + Vector3.up * _topRaycastLength);
+      //   //Corner Check
+      //   Gizmos.color = Color.green;
+      //   Gizmos.DrawLine(transform.position + _edgeRaycastOffset, transform.position + _edgeRaycastOffset + Vector3.up * _topRaycastLength);
+      //   Gizmos.DrawLine(transform.position - _edgeRaycastOffset, transform.position - _edgeRaycastOffset + Vector3.up * _topRaycastLength);
+      //   Gizmos.DrawLine(transform.position + _innerRaycastOffset, transform.position + _innerRaycastOffset + Vector3.up * _topRaycastLength);
+      //   Gizmos.DrawLine(transform.position - _innerRaycastOffset, transform.position - _innerRaycastOffset + Vector3.up * _topRaycastLength);
 
-        //Corner Distance Check
-        Gizmos.DrawLine(transform.position - _innerRaycastOffset + Vector3.up * _topRaycastLength,
-                        transform.position - _innerRaycastOffset + Vector3.up * _topRaycastLength + Vector3.left * _topRaycastLength);
-        Gizmos.DrawLine(transform.position + _innerRaycastOffset + Vector3.up * _topRaycastLength,
-                        transform.position + _innerRaycastOffset + Vector3.up * _topRaycastLength + Vector3.right * _topRaycastLength);
+      //   //Corner Distance Check
+      //   Gizmos.color = Color.cyan;
+      //   Gizmos.DrawLine(transform.position - _innerRaycastOffset + Vector3.up * _topRaycastLength,
+      //                   transform.position - _innerRaycastOffset + Vector3.up * _topRaycastLength + new Vector3(-0.25f,0));
+      //   Gizmos.DrawLine(transform.position + _innerRaycastOffset + Vector3.up * _topRaycastLength,
+      //                   transform.position + _innerRaycastOffset + Vector3.up * _topRaycastLength + Vector3.right * _topRaycastLength);
 
-        //Wall Check
-        Gizmos.DrawLine(transform.position, transform.position + Vector3.right * _wallRaycastLength);
-        Gizmos.DrawLine(transform.position, transform.position + Vector3.left * _wallRaycastLength);
+      //   //Wall Check
+      //   Gizmos.color = Color.black;
+      //   Gizmos.DrawLine(transform.position, transform.position + Vector3.right * _wallRaycastLength);
+      //   Gizmos.DrawLine(transform.position, transform.position + Vector3.left * _wallRaycastLength);
+
+
+      
+
+      // // Gizmos.color = Color.white;
+      // // Gizmos.DrawLine(transform.position - _innerRaycastOffset + Vector3.up, Vector3.up);  
+
+      // Gizmos.color = Color.cyan;
+      // Gizmos.DrawWireSphere(vtI, 0.025f);   
+      // Gizmos.color = Color.white;
+      // Gizmos.DrawWireSphere(vtF, 0.025f);   
+
+
     }
 }
